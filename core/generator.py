@@ -5,10 +5,10 @@ from astrbot.api import logger
 from ..adapter import (
     GeminiAdapter,
     GeminiOpenAIAdapter,
+    GrokAdapter,
     Jimeng2APIAdapter,
     OpenAIAdapter,
     ZImageAdapter,
-    GrokAdapter,
 )
 from .types import (
     AdapterConfig,

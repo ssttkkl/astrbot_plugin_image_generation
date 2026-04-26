@@ -377,6 +377,69 @@
       }
     }
   },
+  "safety_audit": {
+    "description": "安全审核配置",
+    "hint": "包含生图前提示词审核和生图后图片审核",
+    "type": "object",
+    "items": {
+      "prompt_audit": {
+        "description": "生图前提示词审核",
+        "type": "object",
+        "items": {
+          "blocked_words": {
+            "description": "自定义屏蔽词列表",
+            "hint": "包含任一词时将直接拒绝生图请求",
+            "type": "list",
+            "default": []
+          },
+          "enable_ai_audit": {
+            "description": "启用 AI 提示词审核",
+            "hint": "开启后会调用对话模型审核提示词",
+            "type": "bool",
+            "default": false
+          },
+          "ai_provider_id": {
+            "description": "AI 审核 Provider",
+            "hint": "可直接选择用于审核的对话模型 Provider，留空时使用当前会话模型",
+            "type": "string",
+            "default": "",
+            "_special": "select_provider"
+          },
+          "ai_prompt": {
+            "description": "AI 审核提示词",
+            "hint": "直接发送给审核模型的提示词",
+            "type": "text",
+            "default": "你是生图安全审核员。请判断用户提示词是否安全且可用于常规图像生成。仅输出 JSON：{\"allow\": true/false, \"reason\": \"简短原因\"}。"
+          }
+        }
+      },
+      "image_audit": {
+        "description": "生图后图片审核",
+        "type": "object",
+        "items": {
+          "enable_ai_audit": {
+            "description": "启用 AI 图片审核",
+            "hint": "开启后会在发送前进行图片内容审核",
+            "type": "bool",
+            "default": false
+          },
+          "ai_provider_id": {
+            "description": "AI 审核 Provider",
+            "hint": "可直接选择用于审核的对话模型 Provider，留空时使用当前会话模型",
+            "type": "string",
+            "default": "",
+            "_special": "select_provider"
+          },
+          "ai_prompt": {
+            "description": "AI 审核提示词",
+            "hint": "直接发送给审核模型的提示词",
+            "type": "text",
+            "default": "你是图像内容安全审核员。请判断输入图片是否安全且可发送给普通用户。仅输出 JSON：{\"allow\": true/false, \"reason\": \"简短原因\"}。"
+          }
+        }
+      }
+    }
+  },
   "cache": {
     "description": "缓存配置",
     "hint": "图片缓存管理配置",

@@ -1,7 +1,6 @@
 """
 AstrBot 图像生成插件主模块
 
-重构后的精简版本，核心逻辑已拆分到 core/ 目录下的各个模块中。
 """
 
 from __future__ import annotations
@@ -23,6 +22,7 @@ from .core.config_manager import ConfigManager
 from .core.generator import ImageGenerator
 from .core.image_processor import ImageProcessor
 from .core.llm_tool import ImageGenerationTool, adjust_tool_parameters
+from .core.safety_auditor import SafetyAuditor
 from .core.task_manager import TaskManager
 from .core.types import GenerationRequest, ImageCapability, ImageData
 from .core.usage_manager import UsageManager
@@ -59,10 +59,12 @@ class ImageGenerationPlugin(Star):
         # 初始化任务管理器
         self.task_manager = TaskManager()
 
+        # 初始化安全审核器
+        self.safety_auditor = SafetyAuditor(self.context, self.config_manager)
+
         # 初始化生成器
         self.generator: ImageGenerator | None = None
         self.semaphore: asyncio.Semaphore | None = None
-
 
     # ---------------------- 生命周期 ----------------------
 
@@ -270,19 +272,41 @@ class ImageGenerationPlugin(Star):
         if not result.images:
             return
 
+        generated_file_paths: list[str] = []
+        for img_bytes in result.images:
+            file_path = self.image_processor.save_generated_image(task_id, img_bytes)
+            if file_path:
+                generated_file_paths.append(file_path)
+
+        if not generated_file_paths:
+            logger.warning(f"[ImageGen] 任务 {task_id} 未能保存任何生成图片")
+            return
+
+        # 生图后图片审核
+        image_allowed, image_reason = await self.safety_auditor.audit_generated_images(
+            prompt=prompt,
+            image_paths=generated_file_paths,
+            unified_msg_origin=unified_msg_origin,
+        )
+        if not image_allowed:
+            logger.warning(f"[ImageGen] 任务 {task_id} 图片审核未通过: {image_reason}")
+            await self.context.send_message(
+                unified_msg_origin,
+                MessageChain().message(f"❌ 图片内容审核未通过: {image_reason}"),
+            )
+            return
+
         # 记录使用次数
         self.usage_manager.record_usage(unified_msg_origin)
 
         chain = MessageChain()
-        for img_bytes in result.images:
-            file_path = self.image_processor.save_generated_image(task_id, img_bytes)
-            if file_path:
-                chain.file_image(file_path)
+        for file_path in generated_file_paths:
+            chain.file_image(file_path)
 
         info_parts = []
         if self.config_manager.show_generation_info:
             info_parts.append(
-                f"✨ 生成成功！\n📊 耗时: {duration:.2f}s\n🖼️ 数量: {len(result.images)}张"
+                f"✨ 生成成功！\n📊 耗时: {duration:.2f}s\n🖼️ 数量: {len(generated_file_paths)}张"
             )
 
         if self.config_manager.show_model_info and self.config_manager.adapter_config:
@@ -300,7 +324,6 @@ class ImageGenerationPlugin(Star):
             chain.message("\n" + "\n".join(info_parts))
 
         await self.context.send_message(unified_msg_origin, chain)
-
 
     # ---------------------- 指令处理 ----------------------
 
@@ -370,6 +393,13 @@ class ImageGenerationPlugin(Star):
 
         if not prompt:
             yield event.plain_result("❌ 请提供图片生成的提示词或预设名称！")
+            return
+
+        prompt_allowed, prompt_reason = await self.safety_auditor.audit_prompt(
+            prompt, event.unified_msg_origin
+        )
+        if not prompt_allowed:
+            yield event.plain_result(f"❌ 提示词审核未通过: {prompt_reason}")
             return
 
         # 获取参考图

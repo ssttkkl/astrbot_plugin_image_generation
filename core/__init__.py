@@ -8,7 +8,10 @@ from .config_manager import (
     CacheSettings,
     ConfigManager,
     GenerationSettings,
+    ImageAuditSettings,
     PluginConfig,
+    PromptAuditSettings,
+    SafetyAuditSettings,
     UsageSettings,
 )
 from .constants import (
@@ -30,6 +33,7 @@ from .constants import (
 from .generator import ImageGenerator
 from .image_processor import ImageProcessor
 from .llm_tool import ImageGenerationTool, adjust_tool_parameters
+from .safety_auditor import SafetyAuditor
 from .task_manager import TaskManager
 from .types import (
     AdapterConfig,
@@ -64,9 +68,13 @@ __all__ = [
     "UsageSettings",
     "CacheSettings",
     "GenerationSettings",
+    "PromptAuditSettings",
+    "ImageAuditSettings",
+    "SafetyAuditSettings",
     # LLM 工具
     "ImageGenerationTool",
     "adjust_tool_parameters",
+    "SafetyAuditor",
     # 数据类型
     "AdapterConfig",
     "AdapterMetadata",

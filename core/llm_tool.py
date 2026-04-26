@@ -119,6 +119,12 @@ class ImageGenerationTool(FunctionTool[AstrAgentContext]):
             )
             return "❌ 未配置 API Key，无法生成图片"
 
+        prompt_allowed, prompt_reason = await plugin.safety_auditor.audit_prompt(
+            prompt, event.unified_msg_origin
+        )
+        if not prompt_allowed:
+            return f"❌ 提示词审核未通过: {prompt_reason}"
+
         # 工具调用同样支持获取上下文参考图（消息/引用/头像）
         images_data = []
         capabilities = (

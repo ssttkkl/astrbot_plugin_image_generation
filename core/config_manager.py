@@ -43,6 +43,39 @@ class GenerationSettings:
 
 
 @dataclass
+class PromptAuditSettings:
+    """生图前提示词审核设置。"""
+
+    blocked_words: list[str] = field(default_factory=list)
+    enable_ai_audit: bool = False
+    ai_provider_id: str = ""
+    ai_prompt: str = (
+        "你是生图安全审核员。请判断用户提示词是否安全且可用于常规图像生成。"
+        '仅输出 JSON：{"allow": true/false, "reason": "简短原因"}。'
+    )
+
+
+@dataclass
+class ImageAuditSettings:
+    """生图后图片审核设置。"""
+
+    enable_ai_audit: bool = False
+    ai_provider_id: str = ""
+    ai_prompt: str = (
+        "你是图像内容安全审核员。请判断输入图片是否安全且可发送给普通用户。"
+        '仅输出 JSON：{"allow": true/false, "reason": "简短原因"}。'
+    )
+
+
+@dataclass
+class SafetyAuditSettings:
+    """安全审核总设置。"""
+
+    prompt_audit: PromptAuditSettings = field(default_factory=PromptAuditSettings)
+    image_audit: ImageAuditSettings = field(default_factory=ImageAuditSettings)
+
+
+@dataclass
 class PluginConfig:
     """完整的插件配置。"""
 
@@ -50,6 +83,9 @@ class PluginConfig:
     usage_settings: UsageSettings = field(default_factory=UsageSettings)
     cache_settings: CacheSettings = field(default_factory=CacheSettings)
     generation_settings: GenerationSettings = field(default_factory=GenerationSettings)
+    safety_audit_settings: SafetyAuditSettings = field(
+        default_factory=SafetyAuditSettings
+    )
     presets: dict[str, Any] = field(default_factory=dict)
     enable_llm_tool: bool = True
 
@@ -68,6 +104,7 @@ class ConfigManager:
         gen_cfg = self._config.get("generation", {})
         user_limits_cfg = self._config.get("user_limits", {})
         cache_cfg = self._config.get("cache", {})
+        safety_cfg = self._config.get("safety_audit", {})
         api_providers_raw = self._config.get("api_providers", [])
 
         self._plugin_config.enable_llm_tool = self._config.get("enable_llm_tool", True)
@@ -178,6 +215,41 @@ class ConfigManager:
             show_model_info=gen_cfg.get("show_model_info", False),
         )
 
+        # 安全审核设置
+        prompt_audit_cfg = safety_cfg.get("prompt_audit", {})
+        image_audit_cfg = safety_cfg.get("image_audit", {})
+
+        blocked_words_raw = prompt_audit_cfg.get("blocked_words", [])
+        blocked_words: list[str] = []
+        if isinstance(blocked_words_raw, list):
+            blocked_words = [
+                str(word).strip() for word in blocked_words_raw if str(word).strip()
+            ]
+
+        self._plugin_config.safety_audit_settings = SafetyAuditSettings(
+            prompt_audit=PromptAuditSettings(
+                blocked_words=blocked_words,
+                enable_ai_audit=bool(prompt_audit_cfg.get("enable_ai_audit", False)),
+                ai_provider_id=str(prompt_audit_cfg.get("ai_provider_id", "")).strip(),
+                ai_prompt=str(
+                    prompt_audit_cfg.get(
+                        "ai_prompt",
+                        PromptAuditSettings.ai_prompt,
+                    )
+                ).strip(),
+            ),
+            image_audit=ImageAuditSettings(
+                enable_ai_audit=bool(image_audit_cfg.get("enable_ai_audit", False)),
+                ai_provider_id=str(image_audit_cfg.get("ai_provider_id", "")).strip(),
+                ai_prompt=str(
+                    image_audit_cfg.get(
+                        "ai_prompt",
+                        ImageAuditSettings.ai_prompt,
+                    )
+                ).strip(),
+            ),
+        )
+
         # 预设
         self._plugin_config.presets = self._load_presets(
             self._config.get("presets", [])
@@ -285,6 +357,11 @@ class ConfigManager:
     def cache_settings(self) -> CacheSettings:
         """缓存设置。"""
         return self._plugin_config.cache_settings
+
+    @property
+    def safety_audit_settings(self) -> SafetyAuditSettings:
+        """安全审核设置。"""
+        return self._plugin_config.safety_audit_settings
 
     # ---------------------- 供应商查询方法 ----------------------
     def has_provider_type(self, adapter_type: AdapterType) -> bool:

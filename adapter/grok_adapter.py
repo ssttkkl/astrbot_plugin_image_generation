@@ -15,7 +15,12 @@ class GrokAdapter(BaseImageAdapter):
 
     def get_capabilities(self) -> ImageCapability:
         """获取适配器支持的功能。"""
-        return ImageCapability.TEXT_TO_IMAGE | ImageCapability.ASPECT_RATIO | ImageCapability.RESOLUTION | ImageCapability.IMAGE_TO_IMAGE
+        return (
+            ImageCapability.TEXT_TO_IMAGE
+            | ImageCapability.ASPECT_RATIO
+            | ImageCapability.RESOLUTION
+            | ImageCapability.IMAGE_TO_IMAGE
+        )
 
     # generate() 方法由基类提供，使用模板方法模式
 
@@ -72,13 +77,22 @@ class GrokAdapter(BaseImageAdapter):
     def _build_payload(self, request: GenerationRequest) -> dict:
         """构建请求载荷。"""
 
-        accept_ratio = ["auto", "1:1", 
-                        "16:9", "9:16",
-                        "4:3", "3:4",
-                        "3:2", "2:3",
-                        "1:2", "2:1",
-                        "19.5:9", "9:19.5",
-                        "20:9", "9:20"]
+        accept_ratio = [
+            "auto",
+            "1:1",
+            "16:9",
+            "9:16",
+            "4:3",
+            "3:4",
+            "3:2",
+            "2:3",
+            "1:2",
+            "2:1",
+            "19.5:9",
+            "9:19.5",
+            "20:9",
+            "9:20",
+        ]
         accept_resolution = ["1k", "2k"]
 
         ratio = "auto"
@@ -97,7 +111,7 @@ class GrokAdapter(BaseImageAdapter):
             images_ref.append(
                 {
                     "type": "image_url",
-                    "url": f"data:{image.mime_type};base64,{b64_data}"
+                    "url": f"data:{image.mime_type};base64,{b64_data}",
                 }
             )
 
