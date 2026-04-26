@@ -21,6 +21,8 @@ class UsageSettings:
     enable_daily_limit: bool = False
     daily_limit_count: int = 10
     max_image_size_mb: int = 10
+    umo_blacklist: list[str] = field(default_factory=list)
+    blacklist_block_message: str = "❌ 当前会话已被加入黑名单，无法使用生图功能"
 
 
 @dataclass
@@ -72,6 +74,7 @@ class ImageAuditSettings:
 class SafetyAuditSettings:
     """安全审核总设置。"""
 
+    umo_whitelist: list[str] = field(default_factory=list)
     prompt_audit: PromptAuditSettings = field(default_factory=PromptAuditSettings)
     image_audit: ImageAuditSettings = field(default_factory=ImageAuditSettings)
 
@@ -194,11 +197,25 @@ class ConfigManager:
             logger.error("[ImageGen] 未找到任何有效的生图模型配置")
 
         # 用户限制设置
+        umo_blacklist_raw = user_limits_cfg.get("umo_blacklist", [])
+        umo_blacklist: list[str] = []
+        if isinstance(umo_blacklist_raw, list):
+            umo_blacklist = [
+                str(umo).strip() for umo in umo_blacklist_raw if str(umo).strip()
+            ]
+        blacklist_block_message = str(
+            user_limits_cfg.get(
+                "blacklist_block_message", UsageSettings.blacklist_block_message
+            )
+        ).strip()
+
         self._plugin_config.usage_settings = UsageSettings(
             rate_limit_seconds=max(0, user_limits_cfg.get("rate_limit_seconds", 0)),
             max_image_size_mb=max(1, user_limits_cfg.get("max_image_size_mb", 10)),
             enable_daily_limit=user_limits_cfg.get("enable_daily_limit", False),
             daily_limit_count=max(1, user_limits_cfg.get("daily_limit_count", 10)),
+            umo_blacklist=umo_blacklist,
+            blacklist_block_message=blacklist_block_message,
         )
 
         # 缓存设置
@@ -219,6 +236,7 @@ class ConfigManager:
         # 安全审核设置
         prompt_audit_cfg = safety_cfg.get("prompt_audit", {})
         image_audit_cfg = safety_cfg.get("image_audit", {})
+        umo_whitelist_raw = safety_cfg.get("umo_whitelist", [])
 
         blocked_words_raw = prompt_audit_cfg.get("blocked_words", [])
         blocked_words: list[str] = []
@@ -227,7 +245,14 @@ class ConfigManager:
                 str(word).strip() for word in blocked_words_raw if str(word).strip()
             ]
 
+        umo_whitelist: list[str] = []
+        if isinstance(umo_whitelist_raw, list):
+            umo_whitelist = [
+                str(umo).strip() for umo in umo_whitelist_raw if str(umo).strip()
+            ]
+
         self._plugin_config.safety_audit_settings = SafetyAuditSettings(
+            umo_whitelist=umo_whitelist,
             prompt_audit=PromptAuditSettings(
                 blocked_words=blocked_words,
                 enable_ai_audit=bool(prompt_audit_cfg.get("enable_ai_audit", False)),

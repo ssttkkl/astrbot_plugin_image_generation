@@ -335,7 +335,8 @@ class ImageGenerationPlugin(Star):
         # 检查频率限制和每日限制
         check_result = self.usage_manager.check_rate_limit(user_id)
         if isinstance(check_result, str):
-            yield event.plain_result(check_result)
+            if check_result:
+                yield event.plain_result(check_result)
             return
 
         masked_uid = mask_sensitive(user_id)

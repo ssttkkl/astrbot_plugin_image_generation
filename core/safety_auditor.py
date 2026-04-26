@@ -23,6 +23,9 @@ class SafetyAuditor:
     async def audit_prompt(
         self, prompt: str, unified_msg_origin: str
     ) -> tuple[bool, str]:
+        if self._is_umo_whitelisted(unified_msg_origin):
+            return True, ""
+
         settings = self._config_manager.safety_audit_settings.prompt_audit
 
         hit = self._match_blocked_word(prompt, settings.blocked_words)
@@ -50,6 +53,9 @@ class SafetyAuditor:
         image_paths: list[str],
         unified_msg_origin: str,
     ) -> tuple[bool, str]:
+        if self._is_umo_whitelisted(unified_msg_origin):
+            return True, ""
+
         settings = self._config_manager.safety_audit_settings.image_audit
         if not settings.enable_ai_audit:
             return True, ""
@@ -65,6 +71,12 @@ class SafetyAuditor:
             provider_id=settings.ai_provider_id,
             image_urls=image_paths,
         )
+
+    def _is_umo_whitelisted(self, unified_msg_origin: str) -> bool:
+        umo = unified_msg_origin.strip()
+        if not umo:
+            return False
+        return umo in self._config_manager.safety_audit_settings.umo_whitelist
 
     def _build_review_prompt(
         self,

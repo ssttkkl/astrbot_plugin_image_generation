@@ -68,6 +68,13 @@ class UsageManager:
         except Exception as exc:
             logger.error(f"[ImageGen] 保存使用数据失败: {exc}")
 
+    def is_session_blocked(self, user_id: str) -> bool:
+        """Check whether the current session UMO is blocked."""
+        uid = user_id.strip()
+        if not uid:
+            return False
+        return uid in self._settings.umo_blacklist
+
     def check_rate_limit(self, user_id: str) -> bool | str:
         """检查用户请求频率限制和每日限制。
 
@@ -76,6 +83,9 @@ class UsageManager:
             - str: 错误消息
         """
         # 1. 检查频率限制
+        if self.is_session_blocked(user_id):
+            return self._settings.blacklist_block_message
+
         if self._settings.rate_limit_seconds > 0:
             now = time.time()
             last_ts = self._user_request_timestamps.get(user_id, 0)

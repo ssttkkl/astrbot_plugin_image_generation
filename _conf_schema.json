@@ -336,6 +336,18 @@
     "hint": "针对用户的生图限制",
     "type": "object",
     "items": {
+      "umo_blacklist": {
+        "description": "会话 UMO 黑名单",
+        "hint": "填写 unified_msg_origin（UMO）；黑名单中的会话无法使用生图功能",
+        "type": "list",
+        "default": []
+      },
+      "blacklist_block_message": {
+        "description": "黑名单拒绝提示文本",
+        "hint": "黑名单命中时返回给用户的文本，留空则不发送任何文本",
+        "type": "string",
+        "default": "❌ 当前会话未启用生图功能"
+      },
       "rate_limit_seconds": {
         "description": "速率限制（秒）",
         "hint": "单个用户两次请求之间的最小间隔时间,0 表示不限制",
@@ -382,6 +394,12 @@
     "hint": "包含生图前提示词审核和生图后图片审核",
     "type": "object",
     "items": {
+      "umo_whitelist": {
+        "description": "审核白名单会话 UMO 列表",
+        "hint": "填写会话 unified_msg_origin（UMO），命中的会话将跳过提示词和图片审核流程",
+        "type": "list",
+        "default": []
+      },
       "prompt_audit": {
         "description": "生图前提示词审核",
         "type": "object",

@@ -105,9 +105,10 @@ class ImageGenerationTool(FunctionTool[AstrAgentContext]):
         # 检查频率限制和每日限制
         check_result = plugin.usage_manager.check_rate_limit(event.unified_msg_origin)
         if isinstance(check_result, str):
-            logger.warning(
-                f"[ImageGen] 工具调用触发限制: {check_result} (用户: {event.unified_msg_origin})"
-            )
+            if check_result:
+                logger.warning(
+                    f"[ImageGen] 工具调用触发限制: {check_result} (用户: {event.unified_msg_origin})"
+                )
             return check_result
 
         if (
