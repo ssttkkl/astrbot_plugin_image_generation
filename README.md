@@ -96,14 +96,17 @@
 | `blocked_words`    | list    | `[]`   | 自定义屏蔽词列表，命中任意词将直接拒绝。                             |
 | `enable_ai_audit`  | boolean | `false`| 是否启用 AI 提示词审核。                                              |
 | `ai_provider_id`   | string  | `""`  | 审核使用的 Provider ID。留空时使用当前会话的对话模型 Provider。         |
-| `ai_prompt`        | string  | 见默认配置 | AI 审核提示词，将直接发送给审核模型。                                  |
+| `ai_prompt`        | string  | 见默认配置 | AI 审核提示词，支持 `{prompt}` 占位符；未包含时会自动附加当前提示词。   |
 
 **图片审核 (`image_audit`)**
 | 配置项             | 类型    | 默认值 | 说明                                                                 |
 | :----------------- | :------ | :----- | :------------------------------------------------------------------- |
 | `enable_ai_audit`  | boolean | `false`| 是否启用 AI 图片审核。                                                |
 | `ai_provider_id`   | string  | `""`  | 审核使用的 Provider ID。留空时使用当前会话的对话模型 Provider。         |
-| `ai_prompt`        | string  | 见默认配置 | AI 审核提示词，将直接发送给审核模型。                                  |
+| `ai_prompt`        | string  | 见默认配置 | AI 审核提示词；仅在显式写入 `{prompt}` 占位符时才会附带当前提示词。     |
+
+默认情况下，`prompt_audit.ai_prompt` 会把当前生图提示词注入到 `{prompt}` 中。
+`image_audit.ai_prompt` 默认只审核图片本身；只有显式写入 `{prompt}` 时才会把当前提示词一并传给审核模型。
 
 #### 缓存配置 (`cache`)
 | 配置项                   | 类型   | 默认值 | 说明                                       |

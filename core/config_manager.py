@@ -50,7 +50,8 @@ class PromptAuditSettings:
     enable_ai_audit: bool = False
     ai_provider_id: str = ""
     ai_prompt: str = (
-        "你是生图安全审核员。请判断用户提示词是否安全且可用于常规图像生成。"
+        "你是生图安全审核员。请判断以下用户提示词是否安全且可用于常规图像生成。\n"
+        "用户提示词：{prompt}\n"
         '仅输出 JSON：{"allow": true/false, "reason": "简短原因"}。'
     )
 

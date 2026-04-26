@@ -407,9 +407,9 @@
           },
           "ai_prompt": {
             "description": "AI 审核提示词",
-            "hint": "直接发送给审核模型的提示词",
+            "hint": "直接发送给审核模型的提示词，支持 {prompt} 占位符；未包含时会自动附加用户提示词",
             "type": "text",
-            "default": "你是生图安全审核员。请判断用户提示词是否安全且可用于常规图像生成。仅输出 JSON：{\"allow\": true/false, \"reason\": \"简短原因\"}。"
+            "default": "你是生图安全审核员。请判断以下用户提示词是否安全且可用于常规图像生成。\n用户提示词：{prompt}\n仅输出 JSON：{\"allow\": true/false, \"reason\": \"简短原因\"}。"
           }
         }
       },
@@ -432,7 +432,7 @@
           },
           "ai_prompt": {
             "description": "AI 审核提示词",
-            "hint": "直接发送给审核模型的提示词",
+            "hint": "直接发送给审核模型的提示词；仅在显式写入 {prompt} 占位符时才会附带当前提示词",
             "type": "text",
             "default": "你是图像内容安全审核员。请判断输入图片是否安全且可发送给普通用户。仅输出 JSON：{\"allow\": true/false, \"reason\": \"简短原因\"}。"
           }

@@ -14,6 +14,8 @@ from .config_manager import ConfigManager
 class SafetyAuditor:
     """Audits prompts and generated images."""
 
+    PROMPT_PLACEHOLDER = "{prompt}"
+
     def __init__(self, context: Context, config_manager: ConfigManager):
         self._context = context
         self._config_manager = config_manager
@@ -30,7 +32,11 @@ class SafetyAuditor:
         if not settings.enable_ai_audit:
             return True, ""
 
-        review_prompt = settings.ai_prompt.strip()
+        review_prompt = self._build_review_prompt(
+            settings.ai_prompt,
+            prompt,
+            append_prompt_if_missing_placeholder=True,
+        )
         return await self._audit_with_model(
             unified_msg_origin=unified_msg_origin,
             review_prompt=review_prompt,
@@ -48,13 +54,42 @@ class SafetyAuditor:
         if not settings.enable_ai_audit:
             return True, ""
 
-        review_prompt = settings.ai_prompt.strip()
+        review_prompt = self._build_review_prompt(
+            settings.ai_prompt,
+            prompt,
+            append_prompt_if_missing_placeholder=False,
+        )
         return await self._audit_with_model(
             unified_msg_origin=unified_msg_origin,
             review_prompt=review_prompt,
             provider_id=settings.ai_provider_id,
             image_urls=image_paths,
         )
+
+    def _build_review_prompt(
+        self,
+        template: str,
+        prompt: str,
+        *,
+        append_prompt_if_missing_placeholder: bool,
+    ) -> str:
+        review_prompt = template.strip()
+        prompt = prompt.strip()
+
+        if not review_prompt:
+            review_prompt = (
+                "请根据输入内容完成安全审核。"
+                '仅输出 JSON：{"allow": true/false, "reason": "简短原因"}。'
+            )
+
+        if self.PROMPT_PLACEHOLDER in review_prompt:
+            return review_prompt.replace(self.PROMPT_PLACEHOLDER, prompt)
+
+        if not append_prompt_if_missing_placeholder or not prompt:
+            return review_prompt
+
+        # 兼容旧的提示词审核配置：即使没有占位符，也会附加当前提示词给审核模型。
+        return f"{review_prompt}\n\n用户提示词：\n{prompt}"
 
     async def _audit_with_model(
         self,
