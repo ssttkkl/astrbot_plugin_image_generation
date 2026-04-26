@@ -139,13 +139,3 @@ JIMENG_DEFAULT_BASE_URL = "http://localhost:5100"
 """Jimeng2API 默认 Base URL。"""
 
 
-# ========================== 文件路径 ==========================
-
-DATA_DIR = "data/plugin_data/astrbot_plugin_gemini_generation"
-"""插件数据目录。"""
-
-CACHE_SUBDIR = "cache"
-"""缓存子目录名称。"""
-
-USAGE_FILE_NAME = "usage.json"
-"""使用统计文件名。"""
