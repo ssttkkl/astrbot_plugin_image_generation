@@ -19,12 +19,7 @@ class GeminiAdapter(BaseImageAdapter):
 
     def get_capabilities(self) -> ImageCapability:
         """获取适配器支持的功能。"""
-        return (
-            ImageCapability.TEXT_TO_IMAGE
-            | ImageCapability.IMAGE_TO_IMAGE
-            | ImageCapability.ASPECT_RATIO
-            | ImageCapability.RESOLUTION
-        )
+        return self._get_configured_capabilities()
 
     # generate() 方法由基类提供，使用模板方法模式
 

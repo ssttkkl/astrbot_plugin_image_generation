@@ -32,6 +32,21 @@ class BaseImageAdapter(abc.ABC):
     def get_capabilities(self) -> ImageCapability:
         """获取适配器支持的功能。"""
 
+    def _get_configured_capabilities(self) -> ImageCapability:
+        """根据配置项构建适配器能力。"""
+        capability_map: dict[str, ImageCapability] = {
+            "text_to_image": ImageCapability.TEXT_TO_IMAGE,
+            "image_to_image": ImageCapability.IMAGE_TO_IMAGE,
+            "aspect_ratio": ImageCapability.ASPECT_RATIO,
+            "resolution": ImageCapability.RESOLUTION,
+        }
+
+        result = ImageCapability.NONE
+        for key, capability_flag in capability_map.items():
+            if self.config.capability_options.get(key, False):
+                result |= capability_flag
+        return result
+
     async def close(self) -> None:
         """关闭底层的 HTTP 会话。"""
 

@@ -134,6 +134,7 @@ class ConfigManager:
             api_keys = [k for k in provider_item.get("api_keys", []) if k]
             available_models = provider_item.get("available_models") or []
             proxy = (provider_item.get("proxy") or "").strip() or None
+            capability_options = self._parse_capability_options(provider_item)
 
             all_provider_configs.append(
                 AdapterConfig(
@@ -145,6 +146,7 @@ class ConfigManager:
                     proxy=proxy,
                     timeout=gen_cfg.get("timeout", 180),
                     max_retry_attempts=gen_cfg.get("max_retry_attempts", 3),
+                    capability_options=capability_options,
                 )
             )
 
@@ -286,6 +288,43 @@ class ConfigManager:
     def reload(self) -> PluginConfig:
         """重新加载配置。"""
         return self.load()
+
+    def _parse_capability_options(self, provider_item: dict[str, Any]) -> dict[str, bool]:
+        """解析供应商能力配置（完全由配置驱动）。"""
+        raw = provider_item.get("capability_options", [])
+
+        supported_keys = (
+            "text_to_image",
+            "image_to_image",
+            "aspect_ratio",
+            "resolution",
+        )
+
+        if not isinstance(raw, list):
+            logger.warning("[ImageGen] capability_options 配置格式错误，已按空列表处理")
+            raw = []
+
+        capability_alias_map = {
+            "文生图": "text_to_image",
+            "图生图": "image_to_image",
+            "宽高比": "aspect_ratio",
+            "分辨率": "resolution",
+            # 允许英文值，便于手动配置文件时兼容
+            "text_to_image": "text_to_image",
+            "image_to_image": "image_to_image",
+            "aspect_ratio": "aspect_ratio",
+            "resolution": "resolution",
+        }
+
+        selected: set[str] = set()
+        for item in raw:
+            if not isinstance(item, str):
+                continue
+            key = capability_alias_map.get(item.strip())
+            if key:
+                selected.add(key)
+
+        return {key: key in selected for key in supported_keys}
 
     def _clean_base_url(self, url: str) -> str:
         """清理 Base URL，移除末尾的 /v1*"""

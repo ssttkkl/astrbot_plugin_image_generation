@@ -47,6 +47,23 @@
               "gemini-2.5-flash-image",
               "gemini-2.5-flash-image-preview"
             ]
+          },
+          "capability_options": {
+            "description": "模型能力",
+            "hint": "按模型实际能力覆盖渠道默认能力。留空表示使用渠道默认能力。",
+            "type": "list",
+            "options": [
+              "文生图",
+              "图生图",
+              "宽高比",
+              "分辨率"
+            ],
+            "default": [
+              "文生图",
+              "图生图",
+              "宽高比",
+              "分辨率"
+            ]
           }
         }
       },
@@ -86,6 +103,21 @@
               "gemini-3-pro-image",
               "gemini-2.5-flash-image"
             ]
+          },
+          "capability_options": {
+            "description": "模型能力",
+            "hint": "按模型实际能力覆盖渠道默认能力。留空表示使用渠道默认能力。",
+            "type": "list",
+            "options": [
+              "文生图",
+              "图生图",
+              "宽高比",
+              "分辨率"
+            ],
+            "default": [
+              "文生图",
+              "图生图"
+            ]
           }
         }
       },
@@ -124,6 +156,21 @@
             "default": [
               "dall-e-3"
             ]
+          },
+          "capability_options": {
+            "description": "模型能力",
+            "hint": "按模型实际能力覆盖渠道默认能力。留空表示使用渠道默认能力。",
+            "type": "list",
+            "options": [
+              "文生图",
+              "图生图",
+              "宽高比",
+              "分辨率"
+            ],
+            "default": [
+              "文生图",
+              "宽高比"
+            ]
           }
         }
       },
@@ -161,6 +208,22 @@
             "type": "list",
             "default": [
               "z-image-turbo"
+            ]
+          },
+          "capability_options": {
+            "description": "模型能力",
+            "hint": "按模型实际能力覆盖渠道默认能力。留空表示使用渠道默认能力。",
+            "type": "list",
+            "options": [
+              "文生图",
+              "图生图",
+              "宽高比",
+              "分辨率"
+            ],
+            "default": [
+              "文生图",
+              "宽高比",
+              "分辨率"
             ]
           }
         }
@@ -201,6 +264,23 @@
               "jimeng-4.5",
               "nanobanana"
             ]
+          },
+          "capability_options": {
+            "description": "模型能力",
+            "hint": "按模型实际能力覆盖渠道默认能力。留空表示使用渠道默认能力。",
+            "type": "list",
+            "options": [
+              "文生图",
+              "图生图",
+              "宽高比",
+              "分辨率"
+            ],
+            "default": [
+              "文生图",
+              "图生图",
+              "宽高比",
+              "分辨率"
+            ]
           }
         }
       },
@@ -239,6 +319,23 @@
             "default": [
               "grok-imagine-image-pro",
               "grok-imagine-image"
+            ]
+          },
+          "capability_options": {
+            "description": "模型能力",
+            "hint": "按模型实际能力覆盖渠道默认能力。留空表示使用渠道默认能力。",
+            "type": "list",
+            "options": [
+              "文生图",
+              "图生图",
+              "宽高比",
+              "分辨率"
+            ],
+            "default": [
+              "文生图",
+              "图生图",
+              "宽高比",
+              "分辨率"
             ]
           }
         }
