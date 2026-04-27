@@ -25,34 +25,40 @@ class OpenAIAdapter(BaseImageAdapter):
         self, request: GenerationRequest
     ) -> tuple[list[bytes] | None, str | None]:
         """执行单次生图请求。"""
+        import aiohttp
         start_time = time.time()
         prefix = self._get_log_prefix(request.task_id)
-        if request.images:
-            logger.warning(
-                f"{prefix} 适配器目前不支持参考图 (Image-to-Image)，将仅使用提示词生成"
-            )
 
-        payload = self._build_payload(request)
+        use_edit = bool(request.images) and self._is_gpt_image_model()
         session = self._get_session()
+        base = (self.base_url.rstrip("/") if self.base_url else "https://api.openai.com")
+        headers = {"Authorization": f"Bearer {self._get_current_api_key()}"}
 
-        if not self.base_url:
-            url = "https://api.openai.com/v1/images/generations"
+        if use_edit:
+            url = f"{base}/v1/images/edits"
+            form = aiohttp.FormData()
+            form.add_field("model", self.model or "gpt-image-1")
+            form.add_field("prompt", request.prompt)
+            form.add_field("n", "1")
+            if size := self._map_aspect_ratio_to_size(request.aspect_ratio, gpt_model=True):
+                form.add_field("size", size)
+            if quality := self._map_resolution_to_quality(request.resolution, gpt_model=True):
+                form.add_field("quality", quality)
+            for img in request.images:
+                form.add_field(
+                    "image[]", img.data,
+                    content_type=img.mime_type,
+                    filename="image",
+                )
+            kwargs: dict = {"data": form}
         else:
-            # 考虑到 main.py 会清理掉 /v1，这里统一加上
-            url = f"{self.base_url.rstrip('/')}/v1/images/generations"
-
-        headers = {
-            "Authorization": f"Bearer {self._get_current_api_key()}",
-            "Content-Type": "application/json",
-        }
+            url = f"{base}/v1/images/generations"
+            headers["Content-Type"] = "application/json"
+            kwargs = {"json": self._build_payload(request)}
 
         try:
             async with session.post(
-                url,
-                json=payload,
-                headers=headers,
-                proxy=self.proxy,
-                timeout=self._get_timeout(),
+                url, headers=headers, proxy=self.proxy, timeout=self._get_timeout(), **kwargs
             ) as resp:
                 duration = time.time() - start_time
                 if resp.status != 200:
@@ -61,7 +67,6 @@ class OpenAIAdapter(BaseImageAdapter):
                         f"{prefix} API 错误 ({resp.status}, 耗时: {duration:.2f}s): {error_text}"
                     )
                     return None, f"API 错误 ({resp.status})"
-
                 data = await resp.json()
                 logger.info(f"{prefix} 生成成功 (耗时: {duration:.2f}s)")
                 return await self._extract_images(data)
