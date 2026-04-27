@@ -11,13 +11,15 @@ from ..core.types import GenerationRequest, ImageCapability
 
 
 class OpenAIAdapter(BaseImageAdapter):
-    """标准 OpenAI 图像生成适配器 (DALL-E)。"""
+    """OpenAI 图像生成适配器 (DALL-E / GPT Image Models)。"""
 
     def get_capabilities(self) -> ImageCapability:
         """获取适配器支持的功能。"""
         return self._get_configured_capabilities()
 
-    # generate() 方法由基类提供，使用模板方法模式
+    def _is_gpt_image_model(self) -> bool:
+        """判断当前是否为 GPT image model (gpt-image-*)。"""
+        return self.model is not None and "gpt-image" in self.model
 
     async def _generate_once(
         self, request: GenerationRequest
@@ -70,26 +72,75 @@ class OpenAIAdapter(BaseImageAdapter):
 
     def _build_payload(self, request: GenerationRequest) -> dict:
         """构建请求载荷。"""
-        # OpenAI DALL-E 3 常用参数
-        # 映射分辨率
-        size = "1024x1024"
-        if request.aspect_ratio == "9:16":
-            size = "1024x1792"
-        elif request.aspect_ratio == "16:9":
-            size = "1792x1024"
-
-        # 注意：DALL-E 3 仅支持 1024x1024, 1024x1792, 1792x1024
-        # 如果用户指定了其他比例，我们尽量匹配或保持默认
-
+        gpt = self._is_gpt_image_model()
         payload: dict[str, Any] = {
             "model": self.model or "dall-e-3",
             "prompt": request.prompt,
             "n": 1,
-            "size": size,
-            "response_format": "b64_json",
         }
 
+        if size := self._map_aspect_ratio_to_size(request.aspect_ratio, gpt_model=gpt):
+            payload["size"] = size
+        if quality := self._map_resolution_to_quality(request.resolution, gpt_model=gpt):
+            payload["quality"] = quality
+        if not gpt:
+            # GPT image models 始终返回 b64_json，不支持 response_format 参数
+            payload["response_format"] = "b64_json"
+
         return payload
+
+    def _map_aspect_ratio_to_size(
+        self, aspect_ratio: str | None, gpt_model: bool
+    ) -> str | None:
+        """将宽高比映射为 OpenAI 支持的 size 参数。"""
+        if not aspect_ratio or aspect_ratio == "自动":
+            if gpt_model:
+                return "auto"
+            return "1024x1024"
+
+        if gpt_model:
+            # GPT image models 仅支持 auto, 1024x1024, 1536x1024 (横), 1024x1536 (竖)
+            # 如果用户指定了其他比例，尽量匹配最接近的
+            mapping = {
+                "1:1": "1024x1024",
+                "3:2": "1536x1024",
+                "16:9": "1536x1024",
+                "4:3": "1536x1024",
+                "5:4": "1536x1024",
+                "21:9": "1536x1024",
+                "2:3": "1024x1536",
+                "3:4": "1024x1536",
+                "9:16": "1024x1536",
+                "4:5": "1024x1536",
+            }
+        else:
+            # DALL-E 3 仅支持 1024x1024, 1024x1792, 1792x1024
+            # 如果用户指定了其他比例，尽量匹配最接近的
+            mapping = {
+                "1:1": "1024x1024",
+                "3:2": "1792x1024",
+                "16:9": "1792x1024",
+                "4:3": "1792x1024",
+                "5:4": "1792x1024",
+                "21:9": "1792x1024",
+                "2:3": "1024x1792",
+                "3:4": "1024x1792",
+                "9:16": "1024x1792",
+                "4:5": "1024x1792",
+            }
+        return mapping.get(aspect_ratio)
+
+    def _map_resolution_to_quality(
+        self, resolution: str | None, gpt_model: bool
+    ) -> str | None:
+        """将分辨率映射为 OpenAI 支持的 quality 参数。"""
+        if not resolution:
+            return None
+        if gpt_model:
+            mapping = {"1K": "low", "2K": "medium", "4K": "high"}
+        else:
+            mapping = {"1K": "standard", "2K": "hd", "4K": "hd"}
+        return mapping.get(resolution)
 
     async def _extract_images(
         self, response: dict

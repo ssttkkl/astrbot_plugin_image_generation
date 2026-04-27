@@ -154,6 +154,10 @@
             "hint": "用于 /生图模型 命令切换时的可选模型。",
             "type": "list",
             "default": [
+              "gpt-image-2",
+              "gpt-image-1.5",
+              "gpt-image-1",
+              "gpt-image-1-mini",
               "dall-e-3"
             ]
           },
