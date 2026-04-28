@@ -19,6 +19,12 @@ class OpenAIAdapter(BaseImageAdapter):
 
     def _is_gpt_image_model(self) -> bool:
         """判断当前是否为 GPT image model (gpt-image-*)。"""
+        model_family = getattr(self, "model_family", "auto")
+        if model_family == "gpt-image":
+            return True
+        if model_family == "dall-e":
+            return False
+        # auto: 根据模型名称判断
         return self.model is not None and "gpt-image" in self.model
 
     async def _generate_once(
