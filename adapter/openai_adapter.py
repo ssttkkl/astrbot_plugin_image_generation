@@ -42,8 +42,6 @@ class OpenAIAdapter(BaseImageAdapter):
             form.add_field("n", "1")
             if size := self._map_aspect_ratio_to_size(request.aspect_ratio, gpt_model=True):
                 form.add_field("size", size)
-            if quality := self._map_resolution_to_quality(request.resolution, gpt_model=True):
-                form.add_field("quality", quality)
             for img in request.images:
                 form.add_field(
                     "image[]", img.data,
@@ -86,8 +84,7 @@ class OpenAIAdapter(BaseImageAdapter):
 
         if size := self._map_aspect_ratio_to_size(request.aspect_ratio, gpt_model=gpt):
             payload["size"] = size
-        if quality := self._map_resolution_to_quality(request.resolution, gpt_model=gpt):
-            payload["quality"] = quality
+        # 注意：OpenAI 模型不支持配置分辨率（输出固定为 1K~1.5K），quality 是品质参数，与分辨率无关
         if not gpt:
             # GPT image models 始终返回 b64_json，不支持 response_format 参数
             payload["response_format"] = "b64_json"
@@ -134,18 +131,6 @@ class OpenAIAdapter(BaseImageAdapter):
                 "4:5": "1024x1792",
             }
         return mapping.get(aspect_ratio)
-
-    def _map_resolution_to_quality(
-        self, resolution: str | None, gpt_model: bool
-    ) -> str | None:
-        """将分辨率映射为 OpenAI 支持的 quality 参数。"""
-        if not resolution:
-            return None
-        if gpt_model:
-            mapping = {"1K": "low", "2K": "medium", "4K": "high"}
-        else:
-            mapping = {"1K": "standard", "2K": "hd", "4K": "hd"}
-        return mapping.get(resolution)
 
     async def _extract_images(
         self, response: dict
