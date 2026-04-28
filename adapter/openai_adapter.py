@@ -4,6 +4,7 @@ import base64
 import time
 from typing import Any
 
+import aiohttp
 from astrbot.api import logger
 
 from ..core.base_adapter import BaseImageAdapter
@@ -19,17 +20,27 @@ class OpenAIAdapter(BaseImageAdapter):
 
     def _is_gpt_image_model(self) -> bool:
         """判断当前是否为 GPT image model (gpt-image-*)。"""
+        model_family = self.config.extra.get("model_family", "auto")
+        if model_family == "gpt-image":
+            return True
+        if model_family == "dall-e":
+            return False
+        # auto: 根据模型名称判断
         return self.model is not None and "gpt-image" in self.model
 
     async def _generate_once(
         self, request: GenerationRequest
     ) -> tuple[list[bytes] | None, str | None]:
         """执行单次生图请求。"""
-        import aiohttp
         start_time = time.time()
         prefix = self._get_log_prefix(request.task_id)
 
-        use_edit = bool(request.images) and self._is_gpt_image_model()
+        is_gpt = self._is_gpt_image_model()
+        use_edit = bool(request.images) and is_gpt
+        if request.images and not is_gpt:
+            logger.warning(
+                f"{prefix} 提供了参考图但当前模型不支持图生图，仅 GPT Image 系列支持图生图，参考图将被忽略"
+            )
         session = self._get_session()
         base = (self.base_url.rstrip("/") if self.base_url else "https://api.openai.com")
         headers = {"Authorization": f"Bearer {self._get_current_api_key()}"}
